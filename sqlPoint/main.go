@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/beego/beego/v2/client/orm"
 	_ "github.com/mattn/go-sqlite3"
 	"strconv"
+	"time"
 )
 
 type Person struct {
@@ -33,36 +35,78 @@ func init() {
 func main() {
 
 	var err error
+	deletePoint()
+	for i := 0; i < 1000; i++ {
+		persons := make([]*Person, 0)
 
-	persons := make([]*Person, 0)
-	for i := 0; i < 50; i++ {
-		persons = append(persons, &Person{
-			Name: strconv.Itoa(i),
-			Age:  i,
-		})
+		for j := 0; j < 10000; j++ {
+			persons = append(persons, &Person{
+				Name: strconv.Itoa(j + i),
+				Age:  i * j,
+			})
+		}
+
+		personChannel <- persons
 	}
+	close(personChannel)
 
+	//_, err = orm.NewOrm().Raw("delete from sqlite_sequence where name='person';").Exec()
+	//fmt.Println("err",err)
 	_, err = orm.NewOrm().Raw("update sqlite_sequence SET seq = 1024 where name = 'person';").Exec()
+	fmt.Println("err", err)
+
 	if err != nil {
 		return
 	}
-	//exec, err := engine.Exec("update sqlite_sequence SET seq = 1024 where name = 'person';")
-	//if err != nil {
-	//	return
-	//}
+	//InsertP(persons)
+	go InsertByChannel()
+	for true {
+		time.Sleep(time.Second)
+		fmt.Println(",,,,,,,,")
+	}
+}
 
-	//for i := 0; i < len(persons); i++ {
-	//	//p.Id= int64(i+1034)
-	//	_, err := orm.NewOrm().Insert(persons[i])
-	//	fmt.Println(err)
-	//	if err != nil {
-	//		//fmt.Println(err,".......",i)
-	//		return
-	//	}
-	//}
-	_, err = orm.NewOrm().InsertMulti(len(persons),
-		persons)
-	fmt.Println(err)
+func deletePoint() {
+	exec, err := orm.NewOrm().Raw("delete from person;").Exec()
+	fmt.Println(exec, err)
+}
 
-	fmt.Println(err)
+type Message struct {
+	ID     int32
+	PN     string
+	Number int32
+	Flag   string
+}
+
+func InsertP(persons []*Person) {
+	o := orm.NewOrm()
+	t := time.Now()
+
+	err := o.DoTx(func(ctx context.Context, txOrm orm.TxOrmer) error {
+		var err error
+		for i := 0; i < len(persons); i++ {
+			_, err = txOrm.Insert(persons[i])
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+		return err
+	})
+	fmt.Println(time.Since(t), "insert point length:", len(persons))
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+}
+
+var personChannel = make(chan []*Person, 1000)
+
+func InsertByChannel() {
+	now := time.Now()
+	for people := range personChannel {
+		InsertP(people)
+	}
+	fmt.Println(time.Since(now))
+
 }
