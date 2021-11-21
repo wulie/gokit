@@ -10,14 +10,6 @@ import (
 )
 
 func redisConnect() (rdb *redis.Client) {
-
-	var (
-
-	//password    string
-	)
-
-	//password = os.Getenv("RedisPass")
-
 	rdb = redis.NewClient(&redis.Options{
 		//Addr:     redisServer + ":" + port,
 		Addr:     "localhost:6379",
