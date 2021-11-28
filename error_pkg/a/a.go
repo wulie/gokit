@@ -18,3 +18,7 @@ func B() error {
 	}
 	return nil
 }
+
+func C() error {
+	return aa.Cause(B())
+}
