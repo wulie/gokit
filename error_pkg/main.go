@@ -29,7 +29,8 @@ func main() {
 	//	fmt.Printf("%+v 7777777777777", err)
 	//
 	//}
-	fmt.Println(a.B())
-	fmt.Println(a.C())
+	//fmt.Println(a.B())
+	//fmt.Println(a.C())
+	fmt.Printf("%+v 7777777777777", a.C())
 
 }
